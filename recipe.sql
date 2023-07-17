@@ -25,7 +25,7 @@ CREATE TABLE recipe (
 INSERT INTO users (name, email, pass) VALUES ('John', 'jhontor@gmail.com', 'admin');
 INSERT INTO users (name, email, pass) VALUES ('Lintang', 'lantung@gmail.com', 'admin');
 INSERT INTO users (name, email, pass) VALUES ('Duka', 'lara@gmail.com', 'admin');
-INSERT INTO users (name, email, pass) VALUES ('Hari', 'hari@gmail.com', 'admin');
+
 INSERT INTO users (name, email, pass) VALUES ('Hari', 'hari@gmail.com', 'admin');
 
 
