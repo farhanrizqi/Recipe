@@ -27,6 +27,7 @@ INSERT INTO users (name, email, pass) VALUES ('Lintang', 'lantung@gmail.com', 'a
 INSERT INTO users (name, email, pass) VALUES ('Duka', 'lara@gmail.com', 'admin');
 
 INSERT INTO users (name, email, pass) VALUES ('Hari', 'hari@gmail.com', 'admin');
+INSERT INTO users (name, email, pass) VALUES ('Hari', 'hari@gmail.com', 'admin');
 
 
 -- read
