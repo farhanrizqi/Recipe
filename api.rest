@@ -1,0 +1,23 @@
+@url = http://localhost 
+@port = 3000 
+### 
+GET {{url}}:{{port}} 
+### 
+GET {{url}}:{{port}}/recipe
+### 
+DELETE {{url}}:{{port}}/recipe/1
+### 
+POST {{url}}:{{port}}/recipe
+Content-Type: application/x-www-form-urlencoded
+
+title=sate
+ingredients=daging ayam, kecap
+category=main course
+
+###
+PATCH {{url}}:{{port}}/products/3 Content-Type: application/json
+
+{
+"name" : "eraser", "price" : 1500
+}
+DELETE {{url}}:{{port}}/products/4
