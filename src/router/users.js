@@ -1,19 +1,17 @@
 const {
   getData,
-  getDataById,
   getSpecData,
-  deleteData,
-  postData,
   putData,
+  login,
+  regis,
 } = require("../controller/usersC");
-const app = require("express");
-const router = app.Router();
+const express = require("express");
+const router = express.Router();
 
 router.get("/", getData);
 router.get("/spc", getSpecData);
-router.get("/:id", getDataById);
-router.delete("/:id", deleteData);
 router.put("/:id", putData);
-router.post("/", postData);
+router.post("/login", login);
+router.post("/regis", regis);
 
 module.exports = router;

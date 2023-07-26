@@ -1,5 +1,5 @@
-@url = http://localhost 
-@port = 3000 
+@url = 147.139.210.135 
+@port = 5432
 ### 
 GET {{url}}:{{port}} 
 ### 
@@ -9,10 +9,6 @@ DELETE {{url}}:{{port}}/recipe/1
 ### 
 POST {{url}}:{{port}}/recipe
 Content-Type: application/x-www-form-urlencoded
-
-title=sate
-ingredients=daging ayam, kecap
-category=main course
 
 ###
 PATCH {{url}}:{{port}}/products/3 Content-Type: application/json

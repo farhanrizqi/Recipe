@@ -1,4 +1,4 @@
--- Active: 1689596961095@@127.0.0.1@5432@recipe13
+-- Active: 1689913329529@@147.139.210.135@5432@farhan01
 
 --create table
 
@@ -7,7 +7,8 @@ CREATE TABLE
         id SERIAL PRIMARY KEY,
         name VARCHAR NOT NULL,
         email VARCHAR NOT NULL,
-        pass VARCHAR NOT NULL
+        pass VARCHAR NOT NULL,
+        role VARCHAR NOT NULL
     );
 
 CREATE TABLE
@@ -19,10 +20,15 @@ CREATE TABLE
 CREATE TABLE
     recipe (
         id SERIAL PRIMARY KEY,
-        title VARCHAR NOT NULL,
-        ingredients VARCHAR NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        ingredients VARCHAR(1000) NOT NULL,
         categoryId INTEGER NOT NULL,
-        CONSTRAINT category_recipe FOREIGN KEY(categoryId) REFERENCES category(id)
+        img VARCHAR NOT NULL,
+        usersId INTEGER NOT NULL,
+        createDate TIMESTAMP NOT NULL,
+        updateDate TIMESTAMP DEFAULT NULL,
+        CONSTRAINT FKcategory FOREIGN KEY(categoryId) REFERENCES category(id),
+        CONSTRAINT users_recipe FOREIGN KEY(usersId) REFERENCES users(id)
     );
 
 -- insertions start
@@ -37,27 +43,32 @@ VALUES ('Appetizer'), ('Main Course'), ('Desert ');
 --users start
 
 INSERT INTO
-    users (name, email, pass)
+    users (name, email, pass, role)
 VALUES (
         'John',
         'jhontor@gmail.com',
+        '123',
         'admin'
     ), (
         'Lintang',
         'lantung@gmail.com',
+        '123',
         'admin'
     ), (
         'Duka',
         'lara@gmail.com',
+        '123',
         'admin'
     ), (
         'Hari',
         'hari@gmail.com',
+        '123',
         'admin'
     ), (
         'Hari',
         'hari@gmail.com',
-        'admin'
+        '123',
+        'users'
     );
 
 --users end
@@ -68,24 +79,32 @@ INSERT INTO
     recipe (
         title,
         ingredients,
-        categoryid,
-        photos
+        category_id,
+        img,
+        users_id,
+        created_at
     )
 VALUES (
         'Vin Rouge',
         'Anggur',
         1,
-        'https://placehold.co/600x400/png'
+        'https://placehold.co/600x400/png',
+        2,
+        NOW()
     ), (
         'Petit Canelle',
         'Gula jawa',
         3,
-        'https://placehold.co/600x400/png'
+        'https://placehold.co/600x400/png',
+        2,
+        NOW()
     ), (
         'Ratatouille',
         'Sayuran',
         2,
-        'https://placehold.co/600x400/png'
+        'https://placehold.co/600x400/png',
+        2,
+        NOW()
     );
 
 --recipe end
@@ -98,6 +117,24 @@ SELECT * FROM users WHERE id = 2;
 
 --alter
 
+ALTER TABLE users ADD COLUMN photos VARCHAR ;
+
+ALTER TABLE users ADD COLUMN updated_at TIMESTAMP;
+
+ALTER TABLE recipe RENAME COLUMN categoryId to category_id;
+
+ALTER TABLE recipe RENAME COLUMN updateDate to updated_at;
+
+ALTER TABLE users RENAME COLUMN createDate to created_at;
+
+ALTER TABLE recipe RENAME COLUMN usersId to users_id;
+
+ALTER TABLE users ADD COLUMN createDate TIMESTAMP DEFAULT NOW();
+
+ALTER TABLE users ALTER COLUMN updated_at SET DEFAULT NOW();
+
+ALTER table recipe ALTER COLUMN createDate SET DEFAULT NOW() ;
+
 ALTER TABLE recipe ALTER COLUMN title SET NOT NULL;
 
 ALTER TABLE recipe ALTER COLUMN ingredients SET NOT NULL;
@@ -109,8 +146,6 @@ ALTER TABLE users ALTER COLUMN email SET NOT NULL;
 ALTER TABLE users ALTER COLUMN pass SET NOT NULL;
 
 ALTER TABLE category ALTER COLUMN name SET NOT NULL;
-
-ALTER TABLE recipe ADD COLUMN photos VARCHAR NOT NULL;
 
 -- delete
 
@@ -140,4 +175,6 @@ FROM (
             JOIN category ON recipe.categoryid = category.id
         WHERE
             ingredients ILIKE '%anggur%'
-    ) AS subquery
+    ) AS subquery;
+
+SELECT * FROM users WHERE email = 'hari@gmail.com' 

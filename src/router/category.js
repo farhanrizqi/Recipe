@@ -1,17 +1,7 @@
-const {
-  getData,
-  getDataById,
-  deleteData,
-  postData,
-  putData,
-} = require("../controller/categoryC");
-const app = require("express");
-const router = app.Router();
+const { getData } = require("../controller/categoryC");
+const express = require("express");
+const router = express.Router();
 
 router.get("/", getData);
-router.get("/:id", getDataById);
-router.delete("/:id", deleteData);
-router.put("/:id", putData);
-router.post("/", postData);
 
 module.exports = router;

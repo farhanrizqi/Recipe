@@ -1,156 +1,213 @@
 const {
   getRecipe,
   getRecipeById,
-  getSearchRecipe,
-  getSortRecipe,
-  deleteRecipe,
+  deleteById,
   postRecipe,
   putRecipe,
+  getRecipeAll,
+  getRecipeCount,
 } = require("../model/recipeM");
+const cloudinary = require("cloudinary").v2;
+cloudinary.config({
+  cloud_name: "ddrecezrk",
+  api_key: "188633434879868",
+  api_secret: "uSL4XTmvfV0eTt0wYqvwhJaRvxE",
+});
 
 const recipeController = {
-  getData: async (req, res, next) => {
-    let data = await getRecipe();
-    console.log(data);
-    if (data) {
-      return res
-        .status(200)
-        .json({ status: 200, message: "get data success", data: data.rows });
+  getDataDetail: async (req, res, next) => {
+    const { search, searchBy, limit } = req.query;
+
+    let page = req.query.page || 1;
+    let limiter = limit || 5;
+
+    data = {
+      search: search || "",
+      searchBy: searchBy || "title",
+      offset: (page - 1) * limiter,
+      limit: limit || 5,
+    };
+    let dataRecipe = await getRecipe(data);
+    let dataRecipeCount = await getRecipeCount(data);
+
+    let pagination = {
+      totalPage: Math.ceil(dataRecipeCount.rows[0].count / limiter),
+      totalData: parseInt(dataRecipeCount.rows[0].count),
+      pageNow: parseInt(page),
+    };
+
+    console.log("dataRecipe");
+    console.log(dataRecipe);
+    console.log("total data");
+    console.log(dataRecipeCount.rows[0].count);
+    if (dataRecipe) {
+      res.status(200).json({
+        status: 200,
+        message: "get data recipe success",
+        data: dataRecipe.rows,
+        pagination,
+      });
     }
   },
-
+  getData: async (req, res, next) => {
+    let dataRecipe = await getRecipeAll();
+    console.log("dataRecipe");
+    console.log(dataRecipe);
+    if (dataRecipe) {
+      res.status(200).json({
+        status: 200,
+        message: "get data recipe success",
+        data: dataRecipe.rows,
+      });
+    }
+  },
   getDataById: async (req, res, next) => {
     const { id } = req.params;
+
     if (!id || id <= 0 || isNaN(id)) {
-      return res.status(404).json({ message: "ID not found" });
+      return res.status(404).json({ message: "Wrong ID" });
     }
 
+    let dataRecipeId = await getRecipeById(parseInt(id));
+
+    console.log("dataRecipe");
+    console.log(dataRecipeId);
+
+    if (!dataRecipeId.rows[0]) {
+      return res
+        .status(200)
+        .json({ status: 200, message: "get data recipe not found", data: [] });
+    }
+
+    return res.status(200).json({
+      status: 200,
+      message: "get data recipe success",
+      data: dataRecipeId.rows[0],
+    });
+  },
+  deleteDataById: async (req, res, next) => {
     try {
-      let data = await getRecipeById(id);
-      console.log(data);
-      if (!data.rows[0]) {
-        return res.status(404).json({ message: "Data not found" });
+      const { id } = req.params;
+
+      if (!id || id <= 0 || isNaN(id)) {
+        return res.status(404).json({ message: "Wrong ID" });
+      }
+
+      let dataRecipeId = await getRecipeById(parseInt(id));
+
+      let users_id = req.payload.id;
+      let role = req.payload.role;
+
+      console.log("Data ID");
+      console.log(users_id);
+      console.log(dataRecipeId.rows[0].users_id);
+      if (users_id != dataRecipeId.rows[0].users_id || role != "admin") {
+        return res.status(404).json({ message: "You're not authorized" });
+      }
+
+      let result = await deleteById(parseInt(id));
+      console.log(result);
+      if (result.rowCount == 0) {
+        throw new Error("DELETE data failed");
       }
       return res.status(200).json({
         status: 200,
-        message: "GET data success",
-        data: data.rows[0],
+        message: "DELETE data success",
+        data: result.rows[0],
       });
     } catch (err) {
-      return res.status(500).json({ message: "Error fetching data" });
+      return res.status(404).json({ status: 404, message: err.message });
     }
   },
+  postData: async (req, res, next) => {
+    const { title, ingredients, category_id } = req.body;
+    console.log("post data ");
+    console.log(title, ingredients, category_id);
 
-  getSpecData: async (req, res, next) => {
-    try {
-      const { search, searchBy, limit, order } = req.query;
+    let users_id = req.payload.id;
+    console.log("payload");
+    console.log(req.payload);
 
-      let page = req.query.page || 1;
-      let limiter = limit || 5;
-
-      data = {
-        search: search || "",
-        searchBy: searchBy || "title",
-        offset: (page - 1) * limiter,
-        limit: limit || 5,
-        order: order || "ASC" || "DESC",
-      };
-      let searchData = await getSearchRecipe(data);
-      let countData = await getSortRecipe(data);
-
-      let pagination = {
-        totalPage: Math.ceil(countData.rows[0].count / limiter),
-        totalData: parseInt(countData.rows[0].count),
-        pageNow: parseInt(page),
-      };
-
-      console.log("dataRecipe");
-      console.log(searchData);
-      console.log("Total Data");
-      console.log(countData.rows[0].count);
-
-      if (searchData.rows.length > 0) {
-        res.status(200).json({
-          status: 200,
-          message: "Get data success",
-          data: searchData.rows,
-          pagination,
-        });
-      } else {
-        res.status(200).json({
-          status: 200,
-          message: "No data found",
-          data: [],
-          pagination,
-        });
-      }
-    } catch (e) {
-      res.status(404).json({ message: e.message });
+    if (!title || !ingredients || !category_id) {
+      return res
+        .status(404)
+        .json({ message: "Input title, ingredients, category " });
     }
-  },
 
-  deleteData: async (req, res, next) => {
     try {
-      const { id } = req.params;
-      let data = await deleteRecipe(id);
-      console.log(data);
-      if (!data.rows[0] || !id || id <= 0 || isNaN(id)) {
-        return res.status(200).json({
-          status: 200,
-          message: "GET data success",
-          data: data.rows[0],
-        });
-      }
-      return res.status(404).json({ message: "Delete data failed" });
-      // return res.status(404).json({ message: "Data not found" });
-    } catch (err) {
-      return res.status(404).json({ message: err.message });
-    }
-  },
+      const cloudUpload = await cloudinary.uploader.upload(req.file.path);
+      const imgUrl = cloudUpload.secure_url;
 
-  postData: (req, res, next) => {
-    try {
-      const { title, ingredients, categoryid, photos } = req.body;
-      if (!title || !ingredients || !categoryid || !photos) {
-        return res.status(404).json({ message: "All input required" });
-      }
       let data = {
-        title,
-        ingredients,
-        categoryid,
-        photos,
+        title: title,
+        ingredients: ingredients,
+        category_id: parseInt(category_id),
+        img: imgUrl,
+        users_id: users_id,
       };
-      let result = postRecipe(data);
-      console.log(result);
-      return res.status(200).json({ message: "Input data success", data });
-    } catch (err) {
-      return res.status(404).json({ message: err.message });
+
+      // Save data to the database
+      let result = await postRecipe(data);
+
+      return res
+        .status(200)
+        .json({ status: 200, message: "Add data success", data });
+    } catch (error) {
+      return res
+        .status(500)
+        .json({ message: "Failed to upload image to Cloudinary" });
     }
   },
-
   putData: async (req, res, next) => {
     const { id } = req.params;
-    const { title, ingredients, categoryid, photos } = req.body;
+    const { title, ingredients, category_id, img } = req.body;
 
     if (!id || id <= 0 || isNaN(id)) {
-      return res.status(404).json({ message: "ID not found" });
+      return res.status(404).json({ message: "Wrong token" });
     }
 
-    let idData = await getRecipeById(id);
+    let dataRecipeId = await getRecipeById(parseInt(id));
+
+    let users_id = req.payload.id;
+    let role = req.payload.role;
+
+    console.log("Data ID");
+    console.log(users_id);
+    console.log(dataRecipeId.rows[0].users_id);
+    if (users_id != dataRecipeId.rows[0].users_id || role != "admin") {
+      return res.status(404).json({ message: "You're not authorized" });
+    }
+
+    console.log("Edited data :");
+    console.log(dataRecipeId.rows[0]);
 
     let data = {
-      title: title || idData.rows[0].title,
-      ingredients: ingredients || idData.rows[0].ingredients,
-      categoryid: categoryid || idData.rows[0].categoryid,
-      photos: photos || idData.rows[0].photos,
+      title: title || dataRecipeId.rows[0].title,
+      ingredients: ingredients || dataRecipeId.rows[0].ingredients,
+      category_id: parseInt(category_id) || dataRecipeId.rows[0].category_id,
+      img: dataRecipeId.rows[0].img, // Keep the existing image URL if no new image is uploaded
     };
+
+    // If a new image is uploaded, update the image URL in Cloudinary
+    if (req.file) {
+      try {
+        const result = await cloudinary.uploader.upload(req.file.path);
+        data.img = result.secure_url;
+      } catch (error) {
+        return res
+          .status(500)
+          .json({ message: "Failed to upload image to Cloudinary" });
+      }
+    }
 
     let result = putRecipe(data, id);
     console.log(result);
 
+    delete data.id;
+
     return res
       .status(200)
-      .json({ status: 200, message: "Update data recipe success", data });
+      .json({ status: 200, message: "Update data success", data });
   },
 };
 

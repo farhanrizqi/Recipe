@@ -1,10 +1,8 @@
-const pg = require("../config/db");
-const argon2 = require("argon2");
+const Pool = require("../config/db");
 
-// TODO GET START =========================================================//
 const getUsers = () => {
   return new Promise((resolve, reject) => {
-    pg.query("SELECT * FROM users;", (err, res) => {
+    Pool.query("SELECT * FROM users;", (err, res) => {
       if (!err) {
         resolve(res);
       } else {
@@ -14,9 +12,9 @@ const getUsers = () => {
   });
 };
 
-const getUsersById = (id) => {
+const getUserById = (id) => {
   return new Promise((resolve, reject) => {
-    pg.query(`SELECT * FROM users WHERE id = ${id}`, (err, res) => {
+    Pool.query(`SELECT * FROM users WHERE id = ${id}`, (err, res) => {
       if (!err) {
         resolve(res);
       } else {
@@ -26,10 +24,22 @@ const getUsersById = (id) => {
   });
 };
 
+const getUserByEmail = async (email) => {
+  console.log("model getUserByEmail");
+  return new Promise((resolve, reject) =>
+    Pool.query(`SELECT * FROM users WHERE email='${email}'`, (err, result) => {
+      if (!err) {
+        resolve(result);
+      } else {
+        reject(err);
+      }
+    })
+  );
+};
 const getSearchUsers = (data) => {
   const { search, searchBy, offset, limit, order } = data;
   return new Promise((resolve, reject) => {
-    pg.query(
+    Pool.query(
       `SELECT * FROM users WHERE ${searchBy} ILIKE '%${search}%' ORDER BY id ${order} OFFSET ${offset} LIMIT ${limit} `,
       (err, res) => {
         if (!err) {
@@ -45,7 +55,7 @@ const getSearchUsers = (data) => {
 const getSortUsers = (data) => {
   const { search, searchBy } = data;
   return new Promise((resolve, reject) => {
-    pg.query(
+    Pool.query(
       `SELECT COUNT(*)
 FROM (
         SELECT users.id
@@ -63,63 +73,54 @@ FROM (
   });
 };
 
-// TODO GET END ===========================================================//
-// TODO DELETE START =========================================================//
-const deleteUsers = (id) => {
-  return new Promise((resolve, reject) => {
-    pg.query(`DELETE FROM users WHERE id = ${id}`, (err, res) => {
-      if (!err) {
-        resolve(res);
-      } else {
-        reject(err);
-      }
-    });
-  });
-};
-// TODO DELETE END ===========================================================//
-// TODO POST START =========================================================//
-const postUsers = async (data) => {
-  const { name, email, pass } = data;
-  const hash = await argon2.hash(pass);
-  return new Promise((resolve, reject) => {
-    pg.query(
-      `INSERT INTO users (name, email, pass) VALUES ($1, $2, $3)`,
-      [name, email, hash],
-      (err, res) => {
+const createUser = async (data) => {
+  let { name, email, pass, role, photos } = data;
+  console.log("model createUser");
+  return new Promise((resolve, reject) =>
+    Pool.query(
+      `INSERT INTO users (name, email, pass, role, photos) VALUES('${name}','${email}','${pass}', '${role}','${photos}')`,
+      (err, result) => {
         if (!err) {
-          resolve(res);
+          resolve(result);
         } else {
           reject(err);
         }
       }
-    );
-  });
+    )
+  );
 };
-// TODO POST END ===========================================================//
-// TODO PUT START =========================================================//
-const putUsers = (data, id) => {
-  const { name, email, pass } = data;
-  return new Promise((resolve, reject) => {
-    pg.query(
-      `UPDATE users SET name = '${name}', email = '${email}', pass = '${pass}' WHERE id = '${id}'`,
-      (err, res) => {
-        if (!err) {
-          resolve(res);
-        } else {
-          reject(err);
-        }
-      }
-    );
-  });
+
+const putUsers = async (data, id) => {
+  const { name, email, pass, role, photos } = data;
+  if (pass) {
+    try {
+      const res = Pool.query(
+        `UPDATE users SET name = $1, email = $2, pass = $3, role = $4, photos = $5  WHERE id = $6`,
+        [name, email, pass, role, photos, id]
+      );
+      return res;
+    } catch (e) {
+      throw e;
+    }
+  } else {
+    try {
+      const res = Pool.query(
+        `UPDATE users SET name = $1, email = $2, photo = $3, updated_at = $4 WHERE id = $5`,
+        [name, email, role, photos, updated_at, id]
+      );
+      return res;
+    } catch (e) {
+      return e;
+    }
+  }
 };
-// TODO PUT END ===========================================================//
 
 module.exports = {
   getUsers,
-  getUsersById,
+  getUserById,
   getSearchUsers,
   getSortUsers,
-  deleteUsers,
-  postUsers,
+  getUserByEmail,
+  createUser,
   putUsers,
 };

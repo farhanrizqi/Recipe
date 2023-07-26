@@ -1,138 +1,115 @@
-const pg = require("../config/db");
+const Pool = require("../config/db");
 
-// TODO GET START =========================================================//
-const getRecipe = () => {
-  return new Promise((resolve, reject) => {
-    pg.query(
-      "SELECT recipe.id, recipe.title, recipe.ingredients, recipe.categoryid, category.name as category, recipe.photos FROM recipe JOIN category ON recipe.categoryid = category.id",
-      (err, res) => {
+const getRecipeAll = async () => {
+  return new Promise((resolve, reject) =>
+    Pool.query(
+      `SELECT recipe.id, recipe.title, recipe.ingredients, recipe.img, category.name AS category, users.name AS author FROM recipe JOIN category ON recipe.category_id = category.id JOIN users ON recipe.users_id = users.id`,
+      (err, result) => {
         if (!err) {
-          resolve(res);
+          resolve(result);
         } else {
           reject(err);
         }
       }
-    );
-  });
+    )
+  );
 };
 
-const getRecipeById = (id) => {
-  return new Promise((resolve, reject) => {
-    pg.query(`SELECT * FROM recipe WHERE id = ${id}`, (err, res) => {
+const getRecipe = async (data) => {
+  const { search, searchBy, offset, limit } = data;
+  return new Promise((resolve, reject) =>
+    Pool.query(
+      `SELECT recipe.id, recipe.title, recipe.ingredients, recipe.img, category.name AS category FROM recipe JOIN category ON recipe.category_id = category.id WHERE ${searchBy} ILIKE '%${search}%' OFFSET ${offset} LIMIT ${limit}`,
+      (err, result) => {
+        if (!err) {
+          resolve(result);
+        } else {
+          reject(err);
+        }
+      }
+    )
+  );
+};
+
+const getRecipeCount = async (data) => {
+  const { search, searchBy, offset, limit } = data;
+  return new Promise((resolve, reject) =>
+    Pool.query(
+      `SELECT COUNT(*) FROM recipe JOIN category ON recipe.category_id = category.id WHERE ${searchBy} ILIKE '%${search}%'`,
+      (err, result) => {
+        if (!err) {
+          resolve(result);
+        } else {
+          reject(err);
+        }
+      }
+    )
+  );
+};
+
+const postRecipe = async (data) => {
+  const { title, ingredients, category_id, img, users_id } = data;
+  console.log(data);
+  return new Promise((resolve, reject) =>
+    Pool.query(
+      `INSERT INTO recipe(title,ingredients,category_id,img,users_id) VALUES('${title}','${ingredients}',${category_id},'${img}',${users_id})`,
+      (err, result) => {
+        if (!err) {
+          resolve(result);
+        } else {
+          reject(err);
+        }
+      }
+    )
+  );
+};
+
+const putRecipe = async (data, id) => {
+  const { title, ingredients, category_id } = data;
+  return new Promise((resolve, reject) =>
+    Pool.query(
+      `UPDATE recipe SET title='${title}', ingredients='${ingredients}', category_id = ${category_id} WHERE id=${id}`,
+      (err, result) => {
+        if (!err) {
+          resolve(result);
+        } else {
+          reject(err);
+        }
+      }
+    )
+  );
+};
+
+const getRecipeById = async (id) => {
+  return new Promise((resolve, reject) =>
+    Pool.query(`SELECT * FROM recipe WHERE id=${id}`, (err, result) => {
       if (!err) {
-        resolve(res);
+        resolve(result);
       } else {
         reject(err);
       }
-    });
-  });
+    })
+  );
 };
 
-const getSearchRecipe = (data) => {
-  const { search, searchBy, offset, limit, order } = data;
-  return new Promise((resolve, reject) => {
-    pg.query(
-      `SELECT recipe.id, recipe.title, recipe.ingredients, recipe.photos, category.name AS category FROM recipe JOIN category ON recipe.categoryid = category.id WHERE ${searchBy} ILIKE '%${search}%' ORDER BY recipe.id ${order} OFFSET ${offset} LIMIT ${limit} `,
-      (err, res) => {
-        if (!err) {
-          resolve(res);
-        } else {
-          reject(err);
-        }
-      }
-    );
-  });
-};
-
-const getSortRecipe = (data) => {
-  const { search, searchBy } = data;
-  return new Promise((resolve, reject) => {
-    pg.query(
-      `SELECT COUNT(*)
-FROM (
-        SELECT recipe.id
-        FROM recipe
-            JOIN category ON recipe.categoryid = category.id
-        WHERE ${searchBy} ILIKE '%${search}%'
-    ) AS queryData`,
-      (err, res) => {
-        if (!err) {
-          resolve(res);
-        } else {
-          reject(err);
-        }
-      }
-    );
-  });
-};
-
-// TODO GET END ===========================================================//
-// TODO DELETE START =========================================================//
-const deleteRecipe = (id) => {
-  return new Promise((resolve, reject) => {
-    pg.query(`DELETE FROM recipe WHERE id = ${id}`, (err, res) => {
+const deleteById = async (id) => {
+  return new Promise((resolve, reject) =>
+    Pool.query(`DELETE FROM recipe WHERE id=${id}`, (err, result) => {
       if (!err) {
-        resolve(res);
+        resolve(result);
       } else {
         reject(err);
       }
-    });
-  });
+    })
+  );
 };
-// TODO DELETE END ===========================================================//
-// TODO POST START =========================================================//
-const postRecipe = (data) => {
-  const { title, ingredients, categoryid, photos } = data;
-  return new Promise((resolve, reject) => {
-    pg.query(
-      `INSERT INTO
-      recipe (
-          title,
-          ingredients,
-          categoryid,
-          photos
-      )
-  VALUES (
-          '${title}',
-          '${ingredients}',
-          ${categoryid},
-          '${photos}'
-      )`,
-      (err, res) => {
-        if (!err) {
-          resolve(res);
-        } else {
-          reject(err);
-        }
-      }
-    );
-  });
-};
-// TODO POST END ===========================================================//
-// TODO PUT START =========================================================//
-const putRecipe = (data, id) => {
-  const { title, ingredients, categoryid, photos } = data;
-  return new Promise((resolve, reject) => {
-    pg.query(
-      `UPDATE recipe SET title = '${title}', ingredients = '${ingredients}', categoryid = '${categoryid}', photos = '${photos}' WHERE id = '${id}'`,
-      (err, res) => {
-        if (!err) {
-          resolve(res);
-        } else {
-          reject(err);
-        }
-      }
-    );
-  });
-};
-// TODO PUT END ===========================================================//
 
 module.exports = {
   getRecipe,
   getRecipeById,
-  getSearchRecipe,
-  getSortRecipe,
-  deleteRecipe,
+  deleteById,
   postRecipe,
   putRecipe,
+  getRecipeAll,
+  getRecipeCount,
 };
